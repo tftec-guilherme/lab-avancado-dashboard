@@ -126,14 +126,22 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Configurar App Settings e startup
+      - name: Remover WEBSITE_RUN_FROM_PACKAGE se existir
+        run: |
+          az webapp config appsettings delete \
+            --name ${{ secrets.LAB_AVANCADO_APP_NAME }} \
+            --resource-group rg-lab-avancado \
+            --setting-names WEBSITE_RUN_FROM_PACKAGE 2>/dev/null || true
+
+      - name: Configurar App Settings
         run: |
           az webapp config appsettings set \
             --name ${{ secrets.LAB_AVANCADO_APP_NAME }} \
             --resource-group rg-lab-avancado \
-            --settings \
-              NODE_ENV=production \
-              SCM_DO_BUILD_DURING_DEPLOYMENT=false \
+            --settings NODE_ENV=production SCM_DO_BUILD_DURING_DEPLOYMENT=false
+
+      - name: Configurar startup command
+        run: |
           az webapp config set \
             --name ${{ secrets.LAB_AVANCADO_APP_NAME }} \
             --resource-group rg-lab-avancado \
@@ -141,7 +149,18 @@ jobs:
 
       - name: Deploy para App Service
         run: |
-          az webapp deploy             --name ${{ secrets.LAB_AVANCADO_APP_NAME }}             --resource-group rg-lab-avancado             --src-path dashboard/deploy.zip             --type zip             --clean true
+          az webapp deploy \
+            --name ${{ secrets.LAB_AVANCADO_APP_NAME }} \
+            --resource-group rg-lab-avancado \
+            --src-path dashboard/deploy.zip \
+            --type zip \
+            --clean true
+
+      - name: Reiniciar App Service
+        run: |
+          az webapp restart \
+            --name ${{ secrets.LAB_AVANCADO_APP_NAME }} \
+            --resource-group rg-lab-avancado
 
   # ─── Job 3: Deploy Azure Functions ─────────────────────────
   deploy-functions:
