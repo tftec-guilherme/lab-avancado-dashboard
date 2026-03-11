@@ -47,19 +47,30 @@ router.get('/:id', async (req, res) => {
 });
 
 // PATCH /api/products/:id/stock — update stock level
+// Accepts { stock: N } for absolute value OR { quantity: N } for delta (negative to decrement)
 router.patch('/:id/stock', async (req, res) => {
   try {
-    const { stock } = req.body;
+    const { stock, quantity } = req.body;
     const productId = parseInt(req.params.id, 10);
 
-    if (stock === undefined || stock === null) {
-      return res.status(400).json({ error: 'Stock value is required' });
+    if (stock === undefined && quantity === undefined) {
+      return res.status(400).json({ error: 'stock or quantity is required' });
     }
 
-    const result = await execute(
-      'UPDATE Products SET Stock = @stock WHERE Id = @id',
-      { stock: parseInt(stock, 10), id: productId }
-    );
+    let result;
+    if (quantity !== undefined) {
+      // Delta mode: add quantity to current stock (use negative to decrement)
+      result = await execute(
+        'UPDATE Products SET Stock = Stock + @quantity WHERE Id = @id',
+        { quantity: parseInt(quantity, 10), id: productId }
+      );
+    } else {
+      // Absolute mode: set stock to exact value
+      result = await execute(
+        'UPDATE Products SET Stock = @stock WHERE Id = @id',
+        { stock: parseInt(stock, 10), id: productId }
+      );
+    }
 
     if (result.rowsAffected[0] === 0) {
       return res.status(404).json({ error: 'Product not found' });

@@ -3,7 +3,8 @@
 
 // Functions principais
 require('./functions/createOrderApi');
-require('./functions/processOrder');
+// processOrder desabilitado — o orderOrchestrator (Durable Functions) assume o pipeline
+// require('./functions/processOrder');
 require('./functions/orderOrchestrator');
 require('./functions/handleStockAlert');
 require('./functions/notifyStock');
