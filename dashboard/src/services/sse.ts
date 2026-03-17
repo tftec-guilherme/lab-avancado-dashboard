@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { EventLogEntry } from '../types';
+import { getEvents } from './api';
 
 const SSE_URL = '/api/events/stream';
 const MAX_EVENTS = 200;
@@ -25,6 +26,17 @@ export function useEventStream(): UseEventStreamReturn {
 
   const clearEvents = useCallback(() => {
     setEvents([]);
+  }, []);
+
+  // Carregar eventos historicos do banco ao iniciar
+  useEffect(() => {
+    getEvents(100)
+      .then((historical) => {
+        setEvents(historical);
+      })
+      .catch((err) => {
+        console.warn('Falha ao carregar eventos historicos:', err);
+      });
   }, []);
 
   useEffect(() => {
